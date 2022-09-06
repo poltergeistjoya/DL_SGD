@@ -103,19 +103,26 @@ flags.DEFINE_float("learning_rate", 0.1, "Learning rate / step size for SGD")
 flags.DEFINE_integer("random_seed", 31415, "Random seed")
 flags.DEFINE_float("sigma_noise", 0.5, "Standard deviation of noise random variable")
 flags.DEFINE_bool("debug", False, "Set logging level to debug")
+#make flag for number of basis functions
+flags.DEFINE_integer("num_basis", 5, "Number of basis functions aka M")
 
-
+#this does the estimations and creates variables to be trained
 class Model(tf.Module):
     def __init__(self, rng, num_features):
         """
         A plain linear regression model with a bias term
         """
         self.num_features = num_features
-        self.w = tf.Variable(rng.normal(shape=[self.num_features, 1]))
+        self.w = tf.Variable(rng.normal(shape=[self.num_basis, 1]))
         self.b = tf.Variable(tf.zeros(shape=[1, 1]))
+        #add mu and sigma as they are also parameters for the estimation
+        self.mu = tf.Variable(rng.normal(shape=[self.num_features, 1]))
+        self.sigma = tf.Variable(rng.normal(shape=[self.num_features, 1]))
 
+    #__call__ to make y hat
     def __call__(self, x):
-        return tf.squeeze(x @ self.w + self.b)
+        phi = np.exp((-(x-self.mu)**2)/(self.sigma**2)
+        return tf.squeeze(np.exp((-(x-self.mu)**2)/(self.sigma**2) @ self.w + self.b))
 
     @property
     def model(self):
