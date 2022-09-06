@@ -59,15 +59,16 @@ class Data:
         self.clean_y = np.sin(2*(np.pi)*self.x) #@ self.model.weights[:, np.newaxis] + self.model.bias
         clean_y = np.sin(2*(np.pi)*self.x) #@ self.model.weights[:, np.newaxis] + self.model.bias
 
-        self.noise= rng.normal(loc=0, scale=0.1, size = 50)
+        noise= rng.uniform(0, 0.1, size =(self.num_samples, self.num_features))
+        print("noise type", type(noise))
         #self-y is what picks the noisy points
-        self.y = clean_y
+        self.y = clean_y + noise
         #rng.normal(loc=clean_y, scale=self.sigma)
 
         for i in range(50):
-            print(self.x[i],clean_y[i], self.y[i], self.noise[i])
+            print(self.x[i],clean_y[i], self.y[i], noise[i])
 
-        print(type(self.x[1]), type(clean_y[1]), type(self.y[1]),type(self.noise[1]))
+        print(type(self.x[1]), type(clean_y[1]), type(self.y[1]),type(noise[1]))
 
     def get_batch(self, rng, batch_size):
         """
@@ -174,6 +175,9 @@ def main(a):
     # print out true values versus estimates
     print("w,    w_hat")
     compare_linear_models(data.model, model.model)
+
+
+#PLOTTING
 
     if FLAGS.num_features > 1:
         # Only continue to plotting if x is a scalar
