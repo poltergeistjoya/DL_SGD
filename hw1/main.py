@@ -33,6 +33,7 @@ class LinearModel:
 @dataclass
 class Data:
     model: LinearModel
+
     #InitVar fields are psuedo-fields and only used by __init__ and __postinit__
     rng: InitVar[np.random.Generator]
     num_features: int
@@ -41,23 +42,32 @@ class Data:
     #field(init=False means parameter not needed when __init__ calde to nmake instance of class)
     x: np.ndarray = field(init=False)
     y: np.ndarray = field(init=False)
+    clean_y: np.ndarray = field(init=False)
+    noise: np.ndarray= field(init=False)
 
     #after __init__ params __post_init__ updates other params
     def __post_init__(self, rng):
         #return evenly spaced values from 0 to num_samples
         self.index = np.arange(self.num_samples)
-        print(self.index)
 
         #random numbers for uniform distribution
-        #WHY IS IT ONLY PULLING FROM 0.1 TO 0.9, mult num_features becomes an error checking case
+        #mult num_features becomes an error checking case
+        #sample x from uniform distribution
         self.x = rng.uniform(0, 1, size=(self.num_samples, self.num_features))
 
-        #mult x vect by weight vect and add bias
-        #clean_y = y_hat???
-        clean_y = self.x @ self.model.weights[:, np.newaxis] + self.model.bias
+        #clean_y are the y's without the noise added
+        self.clean_y = np.sin(2*(np.pi)*self.x) #@ self.model.weights[:, np.newaxis] + self.model.bias
+        clean_y = np.sin(2*(np.pi)*self.x) #@ self.model.weights[:, np.newaxis] + self.model.bias
 
-        #self.y =sin(2pi*xi) + ei
-        self.y = rng.normal(loc=clean_y, scale=self.sigma)
+        self.noise= rng.normal(loc=0, scale=0.1, size = 50)
+        #self-y is what picks the noisy points
+        self.y = clean_y
+        #rng.normal(loc=clean_y, scale=self.sigma)
+
+        for i in range(50):
+            print(self.x[i],clean_y[i], self.y[i], self.noise[i])
+
+        print(type(self.x[1]), type(clean_y[1]), type(self.y[1]),type(self.noise[1]))
 
     def get_batch(self, rng, batch_size):
         """
@@ -126,6 +136,7 @@ def main(a):
     tf_rng = tf.random.Generator.from_seed(tf_seed.entropy)
 
     data_generating_model = LinearModel(
+        #this bias needs to be different
         weights=np_rng.integers(low=0, high=5, size=(FLAGS.num_features)), bias=2
     )
     logging.debug(data_generating_model)
@@ -145,6 +156,7 @@ def main(a):
     optimizer = tf.optimizers.SGD(learning_rate=FLAGS.learning_rate)
 
     bar = trange(FLAGS.num_iters)
+    #autodiff in batches, GradientTape is what does the autodiff
     for i in bar:
         with tf.GradientTape() as tape:
             x, y = data.get_batch(np_rng, FLAGS.batch_size)
@@ -169,9 +181,25 @@ def main(a):
 
     fig, ax = plt.subplots(1, 1, figsize=(5, 3), dpi=200)
 
+    ax.set_title("Linear fit w clean y")
+    ax.set_xlabel("x")
+    ax.set_ylim(np.amax(data.clean_y) * -1.5, np.amax(data.clean_y) * 1.5)
+    h = ax.set_ylabel("clean_y", labelpad=10)
+    h.set_rotation(0)
+
+    xs = np.linspace(0, 1, 10)
+    xs = xs[:, np.newaxis]
+    ax.plot(xs, np.squeeze(model(xs)), "-", np.squeeze(data.x), data.clean_y, "o")
+
+    plt.tight_layout()
+    plt.savefig(f"{script_path}/sincleanfit.pdf")
+
+
+    fig, ax = plt.subplots(1, 1, figsize=(5, 3), dpi=200)
+
     ax.set_title("Linear fit")
     ax.set_xlabel("x")
-    ax.set_ylim(0, np.amax(data.y) * 1.5)
+    ax.set_ylim(np.amax(data.clean_y) * -1.5, np.amax(data.clean_y) * 1.5)
     h = ax.set_ylabel("y", labelpad=10)
     h.set_rotation(0)
 
@@ -180,7 +208,7 @@ def main(a):
     ax.plot(xs, np.squeeze(model(xs)), "-", np.squeeze(data.x), data.y, "o")
 
     plt.tight_layout()
-    plt.savefig(f"{script_path}/afit.pdf")
+    plt.savefig(f"{script_path}/sinfit.pdf")
 
 
 if __name__ == "__main__":
