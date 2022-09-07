@@ -32,7 +32,7 @@ class LinearModel:
 
 @dataclass
 class Data:
-    model: LinearModel
+    #model: LinearModel
 
     #InitVar fields are psuedo-fields and only used by __init__ and __postinit__
     rng: InitVar[np.random.Generator]
@@ -136,7 +136,7 @@ class Model(tf.Module):
     @property
     def model(self):
         return LinearModel(
-            self.w.numpy(), self.b.numpy().squeeze()
+            self.w.numpy(), self.b.numpy().squeeze(), self.mu, self.sigma
         )
 
 
@@ -152,14 +152,14 @@ def main(a):
     np_rng = np.random.default_rng(np_seed)
     tf_rng = tf.random.Generator.from_seed(tf_seed.entropy)
 
-    data_generating_model = LinearModel(
+    #data_generating_model = LinearModel(
         #this bias needs to be different
-        weights=np_rng.integers(low=0, high=5, size=(FLAGS.num_features)), bias=2
-    )
-    logging.debug(data_generating_model)
+     #   weights=np_rng.integers(low=0, high=5, size=(FLAGS.num_features)), bias=2
+    #)
+    #logging.debug(data_generating_model)
 
     data = Data(
-        data_generating_model,
+        #data_generating_model,
         np_rng,
         FLAGS.num_features,
         FLAGS.num_samples,
@@ -167,7 +167,7 @@ def main(a):
     )
 
     model = Model(tf_rng, FLAGS.num_features, FLAGS.num_basis)
-    logging.debug(model.model)
+    #logging.debug(model.model)
 
     #this is what does the SGD at the specified learning rate
     optimizer = tf.optimizers.SGD(learning_rate=FLAGS.learning_rate)
@@ -186,7 +186,7 @@ def main(a):
         bar.set_description(f"Loss @ {i} => {loss.numpy():0.6f}")
         bar.refresh()
 
-    logging.debug(model.model)
+    #logging.debug(model.model)
 
     # print out true values versus estimates
     print("w,    w_hat")
@@ -199,17 +199,29 @@ def main(a):
         # Only continue to plotting if x is a scalar
         exit(0)
 
-    fig, ax = plt.subplots(1, 1, figsize=(5, 3), dpi=200)
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5), dpi=200)
 
-    ax.set_title("Sine fit with SGD")
-    ax.set_xlabel("x")
-    ax.set_ylim(np.amax(data.clean_y) * -1.5, np.amax(data.clean_y) * 1.5)
-    h = ax.set_ylabel("y", labelpad=10)
+    ax[0].set_title("Sine fit with SGD")
+    ax[0].set_xlabel("x")
+    ax[0].set_ylim(np.amax(data.clean_y) * -1.5, np.amax(data.clean_y) * 1.5)
+    h = ax[0].set_ylabel("y", labelpad=10)
     h.set_rotation(0)
 
     xs = np.linspace(0, 1, 100)
     xs = xs[:, np.newaxis]
-    ax.plot(np.squeeze(xs), np.sin(2*np.pi*xs), "-", np.squeeze(data.x), data.y, "o", np.squeeze(xs), np.squeeze(model(xs)), "--")
+    ax[0].plot(np.squeeze(xs), np.sin(2*np.pi*xs), "-", np.squeeze(data.x), data.y, "o", np.squeeze(xs), np.squeeze(model(xs)), "--")
+
+    ax[1].set_title("Gaussian Basis Functions")
+    ax[1].set_xlabel("x")
+    ax[1].set_ylim(0, 1.5)
+    h = ax[1].set_ylabel("y", labelpad=10)
+    h.set_rotation(0)
+
+    xs = np.linspace(0, 1, 100)
+    xs = xs[:, np.newaxis]
+    phi = tf.transpose(tf.math.exp((-(xs-model.mu)**2)/(model.sigma**2)))
+    ax[1].plot(np.squeeze(xs), np.squeeze(np.transpose(phi)), "-")
+
 
     plt.tight_layout()
     plt.savefig(f"{script_path}/sinfit.pdf")
