@@ -201,31 +201,15 @@ def main(a):
 
     fig, ax = plt.subplots(1, 1, figsize=(5, 3), dpi=200)
 
-    ax.set_title("Linear fit w clean y")
-    ax.set_xlabel("x")
-    ax.set_ylim(np.amax(data.clean_y) * -1.5, np.amax(data.clean_y) * 1.5)
-    h = ax.set_ylabel("clean_y", labelpad=10)
-    h.set_rotation(0)
-
-    xs = np.linspace(0, 1, 10)
-    xs = xs[:, np.newaxis]
-    ax.plot(xs, np.squeeze(model(xs)), "-", np.squeeze(data.x), data.clean_y, "o")
-
-    plt.tight_layout()
-    plt.savefig(f"{script_path}/sincleanfit.pdf")
-
-
-    fig, ax = plt.subplots(1, 1, figsize=(5, 3), dpi=200)
-
-    ax.set_title("Linear fit")
+    ax.set_title("Sine fit with SGD")
     ax.set_xlabel("x")
     ax.set_ylim(np.amax(data.clean_y) * -1.5, np.amax(data.clean_y) * 1.5)
     h = ax.set_ylabel("y", labelpad=10)
     h.set_rotation(0)
 
-    xs = np.linspace(0, 1, 10)
+    xs = np.linspace(0, 1, 100)
     xs = xs[:, np.newaxis]
-    ax.plot(xs, np.squeeze(model(xs)), "-", np.squeeze(data.x), data.y, "o")
+    ax.plot(np.squeeze(xs), np.sin(2*np.pi*xs), "-", np.squeeze(data.x), data.y, "o", np.squeeze(xs), np.squeeze(model(xs)), "--")
 
     plt.tight_layout()
     plt.savefig(f"{script_path}/sinfit.pdf")
