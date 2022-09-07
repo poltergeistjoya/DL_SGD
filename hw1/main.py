@@ -103,7 +103,6 @@ class Model(tf.Module):
     #__call__ to make y hat
     def __call__(self, x):
         phi = tf.math.exp((-(x-self.mu)**2)/(self.sigma**2))
-        PHI=np.tile(phi, (self.num_basis, 1))
         return tf.squeeze(phi @ self.w + self.b)
 
     @property
@@ -178,8 +177,8 @@ def main(a):
 
     x2 = np.linspace(-4, 4, 400)
     x2 = x2[:, np.newaxis]
-    phi = tf.transpose(tf.math.exp((-(x2-model.mu)**2)/(model.sigma**2)))
-    ax[1].plot(np.squeeze(x2), np.squeeze(np.transpose(phi)), "-")
+    phi = tf.math.exp((-(x2-model.mu)**2)/(model.sigma**2))
+    ax[1].plot(np.squeeze(x2), np.squeeze(phi), "-")
 
 
     plt.tight_layout()
