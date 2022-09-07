@@ -97,7 +97,6 @@ class Model(tf.Module):
         self.num_basis= num_basis
         self.num_features = num_features
         #need tf.Variable to make it a tunable variable
-        #weight vector should be 1 by m(num of basis fns)
         self.w = tf.Variable(rng.normal(shape=[num_basis, 1]))
         self.b = tf.Variable(tf.zeros(shape=[1, 1]))
         #add mu and sigma as they are also parameters for the estimation
@@ -106,17 +105,8 @@ class Model(tf.Module):
 
     #__call__ to make y hat
     def __call__(self, x):
-        #phi is 1 by n
-        phi = tf.transpose(tf.math.exp((-(x-self.mu)**2)/(self.sigma**2)))
-        # 32 x 1
-        phi =tf.transpose(phi)
-        print("shapelittlephi", np.shape(phi))
-        #make phi mxn matrix where each row is the same
-        #okkkkkk i used np.matlib.repmat and it didnt work like why???
+        phi = tf.math.exp((-(x-self.mu)**2)/(self.sigma**2))
         PHI=np.tile(phi, (self.num_basis, 1))
-        print("shape", np.shape(PHI))
-        print("wshape", np.shape(self.w))
-        print("y_hat",np.shape(tf.squeeze(phi @ self.w + self.b)))
         return tf.squeeze(phi @ self.w + self.b)
 
     @property
@@ -138,14 +128,7 @@ def main(a):
     np_rng = np.random.default_rng(np_seed)
     tf_rng = tf.random.Generator.from_seed(tf_seed.entropy)
 
-    #data_generating_model = LinearModel(
-        #this bias needs to be different
-     #   weights=np_rng.integers(low=0, high=5, size=(FLAGS.num_features)), bias=2
-    #)
-    #logging.debug(data_generating_model)
-
     data = Data(
-        #data_generating_model,
         np_rng,
         FLAGS.num_features,
         FLAGS.num_samples,
@@ -153,7 +136,6 @@ def main(a):
     )
 
     model = Model(tf_rng, FLAGS.num_features, FLAGS.num_basis)
-    #logging.debug(model.model)
 
     #this is what does the SGD at the specified learning rate
     optimizer = tf.optimizers.SGD(learning_rate=FLAGS.learning_rate)
@@ -171,12 +153,6 @@ def main(a):
 
         bar.set_description(f"Loss @ {i} => {loss.numpy():0.6f}")
         bar.refresh()
-
-    #logging.debug(model.model)
-
-    # print out true values versus estimates
-    print("w,    w_hat")
-    #compare_linear_models(data.model, model.model)
 
 
 #PLOTTING
@@ -203,10 +179,10 @@ def main(a):
     h = ax[1].set_ylabel("y", labelpad=10)
     h.set_rotation(0)
 
-    xs = np.linspace(-4, 4, 400)
-    xs = xs[:, np.newaxis]
-    phi = tf.transpose(tf.math.exp((-(xs-model.mu)**2)/(model.sigma**2)))
-    ax[1].plot(np.squeeze(xs), np.squeeze(np.transpose(phi)), "-")
+    x2 = np.linspace(-4, 4, 400)
+    x2 = x2[:, np.newaxis]
+    phi = tf.transpose(tf.math.exp((-(x2-model.mu)**2)/(model.sigma**2)))
+    ax[1].plot(np.squeeze(x2), np.squeeze(np.transpose(phi)), "-")
 
 
     plt.tight_layout()
