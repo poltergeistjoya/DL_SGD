@@ -57,7 +57,7 @@ class Data:
 
         #clean_y are the y's without the noise added
         self.clean_y = np.sin(2*(np.pi)*self.x) #@ self.model.weights[:, np.newaxis] + self.model.bias
-        clean_y = np.sin(2*(np.pi)*self.x) #@ self.model.weights[:, np.newaxis] + self.model.bias
+        clean_y = np.sin(2*(np.pi)*self.x)
 
         noise= rng.uniform(0, 0.1, size =(self.num_samples, self.num_features))
         #self-y is what picks the noisy points
@@ -217,7 +217,7 @@ def main(a):
     h = ax[1].set_ylabel("y", labelpad=10)
     h.set_rotation(0)
 
-    xs = np.linspace(0, 1, 100)
+    xs = np.linspace(-4, 4, 400)
     xs = xs[:, np.newaxis]
     phi = tf.transpose(tf.math.exp((-(xs-model.mu)**2)/(model.sigma**2)))
     ax[1].plot(np.squeeze(xs), np.squeeze(np.transpose(phi)), "-")
