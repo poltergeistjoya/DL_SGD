@@ -109,13 +109,15 @@ flags.DEFINE_integer("num_basis", 1, "Number of basis functions aka M")
 
 #this does the estimations and creates variables to be trained
 class Model(tf.Module):
-    def __init__(self, rng, num_features):
+    def __init__(self, rng, num_features, num_basis):
         """
         A plain linear regression model with a bias term
         """
+        self.num_basis= num_basis
         self.num_features = num_features
         #need tf.Variable to make it a tunable variable
-        self.w = tf.Variable(rng.normal(shape=[1, 1]))
+        #weight vector should be 1 by m(num of basis fns)
+        self.w = tf.Variable(rng.normal(shape=[1, num_basis]))
         self.b = tf.Variable(tf.zeros(shape=[1, 1]))
         #add mu and sigma as they are also parameters for the estimation
         self.mu = tf.Variable(rng.normal(shape=[self.num_features, 1]))
@@ -123,9 +125,14 @@ class Model(tf.Module):
 
     #__call__ to make y hat
     def __call__(self, x):
-        #phi = np.exp((-(x-self.mu)**2)/(self.sigma**2))
-        #print("phi",phi)
-        return tf.squeeze(tf.math.exp((-(x-self.mu)**2)/(self.sigma**2) @ self.w + self.b))
+        #phi is 1 by n
+        phi = tf.math.exp((-(x-self.mu)**2)/(self.sigma**2))
+        print("shapelittlephi", np.shape(phi))
+        #make phi mxn matrix where each row is the same
+        #okkkkkk i used np.matlib.repmat and it didnt work like why???
+        PHI=np.tile(phi, (self.num_basis, 1))
+        print("shape", np.shape(PHI))
+        return tf.squeeze(self.w @ np.transpose(PHI) + self.b)
 
     @property
     def model(self):
@@ -160,7 +167,7 @@ def main(a):
         FLAGS.sigma_noise,
     )
 
-    model = Model(tf_rng, FLAGS.num_features)
+    model = Model(tf_rng, FLAGS.num_features, FLAGS.num_basis)
     logging.debug(model.model)
 
     #this is what does the SGD at the specified learning rate
