@@ -60,9 +60,10 @@ class Data:
         clean_y = np.sin(2*(np.pi)*self.x) #@ self.model.weights[:, np.newaxis] + self.model.bias
 
         noise= rng.uniform(0, 0.1, size =(self.num_samples, self.num_features))
-        print("noise type", type(noise))
         #self-y is what picks the noisy points
-        self.y = clean_y + noise
+        #why are we picking the noise points like this and not clean_y+noise
+        self.y=rng.normal(loc=clean_y, scale = 0.1)
+        #self.y = clean_y + noise
         #rng.normal(loc=clean_y, scale=self.sigma)
 
         for i in range(50):
@@ -104,7 +105,7 @@ flags.DEFINE_integer("random_seed", 31415, "Random seed")
 flags.DEFINE_float("sigma_noise", 0.5, "Standard deviation of noise random variable")
 flags.DEFINE_bool("debug", False, "Set logging level to debug")
 #make flag for number of basis functions
-flags.DEFINE_integer("num_basis", 5, "Number of basis functions aka M")
+flags.DEFINE_integer("num_basis", 1, "Number of basis functions aka M")
 
 #this does the estimations and creates variables to be trained
 class Model(tf.Module):
@@ -113,7 +114,8 @@ class Model(tf.Module):
         A plain linear regression model with a bias term
         """
         self.num_features = num_features
-        self.w = tf.Variable(rng.normal(shape=[self.num_basis, 1]))
+        #need tf.Variable to make it a tunable variable
+        self.w = tf.Variable(rng.normal(shape=[1, 1]))
         self.b = tf.Variable(tf.zeros(shape=[1, 1]))
         #add mu and sigma as they are also parameters for the estimation
         self.mu = tf.Variable(rng.normal(shape=[self.num_features, 1]))
@@ -121,8 +123,9 @@ class Model(tf.Module):
 
     #__call__ to make y hat
     def __call__(self, x):
-        phi = np.exp((-(x-self.mu)**2)/(self.sigma**2)
-        return tf.squeeze(np.exp((-(x-self.mu)**2)/(self.sigma**2) @ self.w + self.b))
+        #phi = np.exp((-(x-self.mu)**2)/(self.sigma**2))
+        #print("phi",phi)
+        return tf.squeeze(tf.math.exp((-(x-self.mu)**2)/(self.sigma**2) @ self.w + self.b))
 
     @property
     def model(self):
