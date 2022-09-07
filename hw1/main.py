@@ -1,11 +1,8 @@
 #!/bin/env python3.8
 
 """
-we want to minimize y_hat est error (loss)= by finding ests for basis, weight, mean, and std dev
-"""
-
-"""
-Example assignment. Author: Chris Curro
+SGD to fit sin wave to noisy sin wave points, modified from Chris Curro example assignment
+We want to minimize y_hat est error (loss)= by finding ests for basis, weight, mean, and std dev
 """
 import os
 import logging
