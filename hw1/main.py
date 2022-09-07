@@ -24,15 +24,9 @@ from dataclasses import dataclass, field, InitVar
 script_path = os.path.dirname(os.path.realpath(__file__))
 
 #use @dataclass implicityl makes __init__ and adds sick methods to class objects
-@dataclass
-class LinearModel:
-    weights: np.ndarray
-    bias: float
-
 
 @dataclass
 class Data:
-    #model: LinearModel
 
     #InitVar fields are psuedo-fields and only used by __init__ and __postinit__
     rng: InitVar[np.random.Generator]
@@ -73,14 +67,6 @@ class Data:
         choices = rng.choice(self.index, size=batch_size)
 
         return self.x[choices], self.y[choices].flatten()
-
-
-def compare_linear_models(a: LinearModel, b: LinearModel):
-    for w_a, w_b in zip(a.weights, b.weights):
-        print(f"{w_a:0.2f}, {w_b:0.2f}")
-
-    print(f"{a.bias:0.2f}, {b.bias:0.2f}")
-
 
 font = {
     # "family": "Adobe Caslon Pro",
