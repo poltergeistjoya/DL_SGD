@@ -66,11 +66,6 @@ class Data:
         #self.y = clean_y + noise
         #rng.normal(loc=clean_y, scale=self.sigma)
 
-        for i in range(50):
-            print(self.x[i],clean_y[i], self.y[i], noise[i])
-
-        print(type(self.x[1]), type(clean_y[1]), type(self.y[1]),type(noise[1]))
-
     def get_batch(self, rng, batch_size):
         """
         Select random subset of examples for training batch
@@ -105,7 +100,7 @@ flags.DEFINE_integer("random_seed", 31415, "Random seed")
 flags.DEFINE_float("sigma_noise", 0.5, "Standard deviation of noise random variable")
 flags.DEFINE_bool("debug", False, "Set logging level to debug")
 #make flag for number of basis functions
-flags.DEFINE_integer("num_basis", 1, "Number of basis functions aka M")
+flags.DEFINE_integer("num_basis", 3, "Number of basis functions aka M")
 
 #this does the estimations and creates variables to be trained
 class Model(tf.Module):
@@ -117,27 +112,31 @@ class Model(tf.Module):
         self.num_features = num_features
         #need tf.Variable to make it a tunable variable
         #weight vector should be 1 by m(num of basis fns)
-        self.w = tf.Variable(rng.normal(shape=[1, num_basis]))
+        self.w = tf.Variable(rng.normal(shape=[num_basis, 1]))
         self.b = tf.Variable(tf.zeros(shape=[1, 1]))
         #add mu and sigma as they are also parameters for the estimation
-        self.mu = tf.Variable(rng.normal(shape=[self.num_features, 1]))
-        self.sigma = tf.Variable(rng.normal(shape=[self.num_features, 1]))
+        self.mu = tf.Variable(rng.normal(shape=[1,self.num_basis]))
+        self.sigma = tf.Variable(rng.normal(shape=[1,self.num_basis]))
 
     #__call__ to make y hat
     def __call__(self, x):
         #phi is 1 by n
-        phi = tf.math.exp((-(x-self.mu)**2)/(self.sigma**2))
+        phi = tf.transpose(tf.math.exp((-(x-self.mu)**2)/(self.sigma**2)))
+        # 32 x 1
+        phi =tf.transpose(phi)
         print("shapelittlephi", np.shape(phi))
         #make phi mxn matrix where each row is the same
         #okkkkkk i used np.matlib.repmat and it didnt work like why???
         PHI=np.tile(phi, (self.num_basis, 1))
         print("shape", np.shape(PHI))
-        return tf.squeeze(self.w @ np.transpose(PHI) + self.b)
+        print("wshape", np.shape(self.w))
+        print("y_hat",np.shape(tf.squeeze(phi @ self.w + self.b)))
+        return tf.squeeze(phi @ self.w + self.b)
 
     @property
     def model(self):
         return LinearModel(
-            self.w.numpy().reshape([self.num_features]), self.b.numpy().squeeze()
+            self.w.numpy(), self.b.numpy().squeeze()
         )
 
 
@@ -191,7 +190,7 @@ def main(a):
 
     # print out true values versus estimates
     print("w,    w_hat")
-    compare_linear_models(data.model, model.model)
+    #compare_linear_models(data.model, model.model)
 
 
 #PLOTTING
